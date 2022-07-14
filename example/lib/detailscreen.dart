@@ -2,7 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:showcaseview/showcaseview.dart';
 
 class Detail extends StatefulWidget {
-  const Detail({Key? key}) : super(key: key);
+  final BuildContext context;
+  final String? skip;
+  final VoidCallback? skipFunction;
+
+  const Detail({
+    Key? key,
+    required this.context,
+    required this.skipFunction,
+    required this.skip,
+  }) : super(key: key);
 
   @override
   _DetailState createState() => _DetailState();
@@ -15,7 +24,7 @@ class _DetailState extends State<Detail> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback(
+    WidgetsBinding.instance!.addPostFrameCallback(
       (_) => Future.delayed(const Duration(milliseconds: 200), () {
         ShowCaseWidget.of(myContext!).startShowCase([_one]);
       }),
@@ -48,8 +57,11 @@ class _DetailState extends State<Detail> {
                 children: <Widget>[
                   Showcase(
                     key: _one,
+                    context: widget.context,
                     title: 'Title',
                     description: 'Desc',
+                    skip: widget.skip,
+                    skipFunction: () => widget.skipFunction,
                     child: InkWell(
                       onTap: () {},
                       child: const Text(
@@ -61,16 +73,12 @@ class _DetailState extends State<Detail> {
                       ),
                     ),
                   ),
-                  const SizedBox(
-                    height: 16,
-                  ),
+                  const SizedBox(height: 16),
                   const Text(
                     'Hi, you have new Notification from flutter group, open slack and check it out',
                     style: TextStyle(fontSize: 18, fontWeight: FontWeight.w500),
                   ),
-                  const SizedBox(
-                    height: 16,
-                  ),
+                  const SizedBox(height: 16),
                   RichText(
                     text: const TextSpan(
                       style: TextStyle(

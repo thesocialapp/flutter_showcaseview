@@ -64,8 +64,7 @@ class _MailPageState extends State<MailPage> {
   @override
   void initState() {
     super.initState();
-    //Start showcase view after current widget frames are drawn.
-    WidgetsBinding.instance.addPostFrameCallback(
+    WidgetsBinding.instance!.addPostFrameCallback(
       (_) => ShowCaseWidget.of(context)
           .startShowCase([_one, _two, _three, _four, _five, _six]),
     );
@@ -84,57 +83,10 @@ class _MailPageState extends State<MailPage> {
         date: '22 May',
         isUnread: false,
       ),
-      Mail(
-        sender: 'Google',
-        sub: 'Flutter 1.5',
-        msg: 'We have launched Flutter 1.5',
-        date: '20 May',
-        isUnread: true,
-      ),
-      Mail(
-        sender: 'Github',
-        sub: 'Showcase View',
-        msg: 'New star on your showcase view.',
-        date: '21 May ',
-        isUnread: false,
-      ),
-      Mail(
-        sender: 'Simform',
-        sub: 'Credit card Plugin',
-        msg: 'Check out our credit card plugin',
-        date: '19 May',
-        isUnread: true,
-      ),
-      Mail(
-        sender: 'Flutter',
-        sub: 'Flutter is Future',
-        msg: 'Flutter laucnhed for Web',
-        date: '18 Jun',
-        isUnread: true,
-      ),
-      Mail(
-        sender: 'Medium',
-        sub: 'Showcase View',
-        msg: 'Check new showcase View',
-        date: '21 May ',
-        isUnread: false,
-      ),
-      Mail(
-        sender: 'Simform',
-        sub: 'Credit card Plugin',
-        msg: 'Check out our credit card plugin',
-        date: '19 May',
-        isUnread: true,
-      ),
-      Mail(
-        sender: 'Flutter',
-        sub: 'Flutter is Future',
-        msg: 'Flutter laucnhed for Web',
-        date: '18 Jun',
-        isUnread: true,
-      ),
     ];
   }
+
+  void _skip() => setState(() => print("*-*-*-*-*-*-"));
 
   @override
   void dispose() {
@@ -150,9 +102,7 @@ class _MailPageState extends State<MailPage> {
         bottom: false,
         child: Column(
           children: <Widget>[
-            const SizedBox(
-              height: 20,
-            ),
+            const SizedBox(height: 20),
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
@@ -178,15 +128,16 @@ class _MailPageState extends State<MailPage> {
                                   children: <Widget>[
                                     Showcase(
                                       key: _one,
+                                      context: context,
                                       description: 'Tap to see menu options',
+                                      skip: "SKIP",
+                                      skipFunction: () => _skip(),
                                       child: Icon(
                                         Icons.menu,
                                         color: Theme.of(context).primaryColor,
                                       ),
                                     ),
-                                    const SizedBox(
-                                      width: 10,
-                                    ),
+                                    const SizedBox(width: 10),
                                     const Text(
                                       'Search email',
                                       style: TextStyle(
@@ -211,7 +162,10 @@ class _MailPageState extends State<MailPage> {
                     Showcase(
                       overlayPadding: const EdgeInsets.all(5),
                       key: _two,
+                      context: context,
                       title: 'Profile',
+                      skip: "SKIP",
+                      skipFunction: () => _skip(),
                       description:
                           "Tap to see profile which contains user's name, profile picture, mobile number and country",
                       showcaseBackgroundColor: Theme.of(context).primaryColor,
@@ -228,14 +182,10 @@ class _MailPageState extends State<MailPage> {
                         child: Image.asset('assets/simform.png'),
                       ),
                     ),
-                    const SizedBox(
-                      width: 12,
-                    )
+                    const SizedBox(width: 12),
                   ],
                 ),
-                const SizedBox(
-                  height: 10,
-                ),
+                const SizedBox(height: 10),
                 Container(
                   padding: const EdgeInsets.only(left: 16, top: 4),
                   child: const Text(
@@ -256,9 +206,21 @@ class _MailPageState extends State<MailPage> {
                 physics: const BouncingScrollPhysics(),
                 itemBuilder: (context, index) {
                   if (index == 0) {
-                    return showcaseMailTile(_three, true, context);
+                    return showcaseMailTile(
+                      _three,
+                      true,
+                      context: context,
+                      skip: "SKIP",
+                      skipFunction: _skip,
+                    );
                   } else if (index == mails.length - 1) {
-                    return showcaseMailTile(_six, false, context);
+                    return showcaseMailTile(
+                      _six,
+                      false,
+                      context: context,
+                      skip: "SKIP",
+                      skipFunction: _skip,
+                    );
                   }
                   return MailTile(mails[index % mails.length]);
                 },
@@ -269,51 +231,65 @@ class _MailPageState extends State<MailPage> {
       ),
       floatingActionButton: Showcase(
         key: _five,
+        context: context,
         title: 'Compose Mail',
         description: 'Click here to compose mail',
+        skip: "SKIP",
+        skipFunction: () => _skip(),
         shapeBorder: const CircleBorder(),
         child: FloatingActionButton(
           backgroundColor: Theme.of(context).primaryColor,
           onPressed: () {
             setState(() {
-              /* reset ListView to ensure that the showcased widgets are
-               * currently rendered so the showcased keys are available in the
-               * render tree. */
               scrollController.jumpTo(0);
               ShowCaseWidget.of(context)
                   .startShowCase([_one, _two, _three, _four, _five, _six]);
             });
           },
-          child: const Icon(
-            Icons.add,
-          ),
+          child: const Icon(Icons.add),
         ),
       ),
     );
   }
 
-  GestureDetector showcaseMailTile(GlobalKey<State<StatefulWidget>> key,
-      bool showCaseDetail, BuildContext context) {
+  GestureDetector showcaseMailTile(
+    GlobalKey? key,
+    bool showCaseDetail, {
+    required BuildContext context,
+    required String? skip,
+    required VoidCallback skipFunction,
+  }) {
     return GestureDetector(
       onTap: () {
         Navigator.push<void>(
           context,
           MaterialPageRoute<void>(
-            builder: (_) => const Detail(),
+            builder: (_) => Detail(
+              context: context,
+              skip: skip,
+              skipFunction: skipFunction,
+            ),
           ),
         );
       },
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 8),
         child: Showcase(
-          key: key,
+          key: key!,
+          context: context,
           description: 'Tap to check mail',
+          skip: "SKIP",
+          skipFunction: () => _skip(),
           disposeOnTap: true,
           onTargetClick: () {
             Navigator.push<void>(
               context,
               MaterialPageRoute<void>(
-                builder: (_) => const Detail(),
+                builder: (_) => Detail(
+                  context: context,
+                  skip: "SKIP",
+                  skipFunction: skipFunction,
+                ),
               ),
             ).then((_) {
               setState(() {
@@ -334,7 +310,9 @@ class _MailPageState extends State<MailPage> {
                     children: <Widget>[
                       if (showCaseDetail)
                         Showcase.withWidget(
+                          context: context,
                           key: _four,
+                          skipFunction: () => _skip(),
                           height: 50,
                           width: 140,
                           shapeBorder: const CircleBorder(),
@@ -360,9 +338,7 @@ class _MailPageState extends State<MailPage> {
                                   ),
                                 ),
                               ),
-                              const SizedBox(
-                                height: 10,
-                              ),
+                              const SizedBox(height: 10),
                               const Text(
                                 "Your sender's profile ",
                                 style: TextStyle(color: Colors.white),
@@ -408,9 +384,7 @@ class _MailPageState extends State<MailPage> {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: const <Widget>[
-                      SizedBox(
-                        height: 5,
-                      ),
+                      SizedBox(height: 5),
                       Text(
                         '1 Jun',
                         style: TextStyle(
@@ -419,13 +393,8 @@ class _MailPageState extends State<MailPage> {
                           color: Colors.grey,
                         ),
                       ),
-                      SizedBox(
-                        height: 10,
-                      ),
-                      Icon(
-                        Icons.star,
-                        color: Color(0xffFBC800),
-                      )
+                      SizedBox(height: 10),
+                      Icon(Icons.star, color: Color(0xffFBC800))
                     ],
                   ),
                 ),
@@ -439,9 +408,7 @@ class _MailPageState extends State<MailPage> {
 }
 
 class SAvatarExampleChild extends StatelessWidget {
-  const SAvatarExampleChild({
-    Key? key,
-  }) : super(key: key);
+  const SAvatarExampleChild({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -565,9 +532,7 @@ class MailTile extends StatelessWidget {
             width: 50,
             child: Column(
               children: <Widget>[
-                const SizedBox(
-                  height: 5,
-                ),
+                const SizedBox(height: 5),
                 Text(
                   mail.date,
                   style: const TextStyle(
@@ -576,9 +541,7 @@ class MailTile extends StatelessWidget {
                     color: Colors.grey,
                   ),
                 ),
-                const SizedBox(
-                  height: 10,
-                ),
+                const SizedBox(height: 10),
                 Icon(
                   mail.isUnread ? Icons.star : Icons.star_border,
                   color: mail.isUnread ? const Color(0xffFBC800) : Colors.grey,

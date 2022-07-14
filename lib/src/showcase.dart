@@ -1,25 +1,3 @@
-/*
- * Copyright (c) 2021 Simform Solutions
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be
- * included in all copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
- * SOFTWARE.
- */
-
 import 'dart:async';
 import 'dart:ui';
 
@@ -35,10 +13,13 @@ import 'tooltip_widget.dart';
 class Showcase extends StatefulWidget {
   @override
   final GlobalKey key;
+  final BuildContext context;
 
   final Widget child;
   final String? title;
   final String? description;
+  final String? skip;
+  final VoidCallback? skipFunction;
   final ShapeBorder? shapeBorder;
   final BorderRadius? radius;
   final TextStyle? titleTextStyle;
@@ -61,20 +42,16 @@ class Showcase extends StatefulWidget {
   final EdgeInsets overlayPadding;
   final VoidCallback? onTargetDoubleTap;
   final VoidCallback? onTargetLongPress;
-
-  /// Defines blur value.
-  /// This will blur the background while displaying showcase.
-  ///
-  /// If null value is provided,
-  /// [ShowCaseWidget.defaultBlurValue] will be considered.
-  ///
   final double? blurValue;
 
   const Showcase({
     required this.key,
+    required this.context,
     required this.child,
     this.title,
     required this.description,
+    this.skip,
+    required this.skipFunction,
     this.shapeBorder,
     this.overlayColor = Colors.black45,
     this.overlayOpacity = 0.75,
@@ -115,12 +92,15 @@ class Showcase extends StatefulWidget {
 
   const Showcase.withWidget({
     required this.key,
+    required this.context,
     required this.child,
     required this.container,
     required this.height,
     required this.width,
     this.title,
     this.description,
+    this.skip,
+    required this.skipFunction,
     this.shapeBorder,
     this.overlayColor = Colors.black45,
     this.radius,
@@ -168,8 +148,6 @@ class _ShowcaseState extends State<Showcase> {
     showOverlay();
   }
 
-  /// show overlay if there is any target widget
-  ///
   void showOverlay() {
     final activeStep = ShowCaseWidget.activeTargetWidget(context);
     setState(() {
@@ -180,14 +158,15 @@ class _ShowcaseState extends State<Showcase> {
       _scrollIntoView();
       if (showCaseWidgetState.autoPlay) {
         timer = Timer(
-            Duration(seconds: showCaseWidgetState.autoPlayDelay.inSeconds),
-            _nextIfAny);
+          Duration(seconds: showCaseWidgetState.autoPlayDelay.inSeconds),
+          _nextIfAny,
+        );
       }
     }
   }
 
   void _scrollIntoView() {
-    WidgetsBinding.instance.addPostFrameCallback((timeStamp) async {
+    WidgetsBinding.instance!.addPostFrameCallback((timeStamp) async {
       setState(() {
         _isScrollRunning = true;
       });
@@ -259,8 +238,6 @@ class _ShowcaseState extends State<Showcase> {
       blur = widget.blurValue ?? showCaseWidgetState.blurValue;
     }
 
-    // Set blur to 0 if application is running on web and
-    // provided blur is less than 0.
     blur = kIsWeb && blur < 0 ? 0 : blur;
 
     return _showShowCase
@@ -331,6 +308,11 @@ class _ShowcaseState extends State<Showcase> {
                       showCaseWidgetState.disableAnimation,
                   animationDuration: widget.animationDuration,
                 ),
+              _SkipWidget(
+                ctx: widget.context,
+                skip: widget.skip!,
+                skipFunction: widget.skipFunction!,
+              ),
             ],
           )
         : SizedBox.shrink();
@@ -380,6 +362,70 @@ class _TargetWidget extends StatelessWidget {
                           Radius.circular(8),
                         ),
                       ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _SkipWidget extends StatelessWidget {
+  final BuildContext ctx;
+  final String skip;
+  final VoidCallback skipFunction;
+
+  _SkipWidget({
+    Key? key,
+    required this.ctx,
+    required this.skip,
+    required this.skipFunction,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Positioned(
+      bottom: 20,
+      left: 60,
+      child: FractionalTranslation(
+        translation: const Offset(-0.5, -0.5),
+        child: GestureDetector(
+          onTap: () {
+            skipFunction();
+            ShowCaseWidget.of(ctx).dismiss();
+          },
+          child: Container(
+            height: 45,
+            width: 90,
+            margin: EdgeInsets.only(top: 5.0),
+            padding: EdgeInsets.symmetric(
+              vertical: 5.0,
+              horizontal: 5.0,
+            ),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Center(
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.cancel_outlined,
+                    color: Colors.red,
+                    size: 30.0,
+                  ),
+                  Text(
+                    skip,
+                    style: TextStyle(
+                      fontSize: 16.0,
+                      fontWeight: FontWeight.bold,
+                      decoration: TextDecoration.none,
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ),
